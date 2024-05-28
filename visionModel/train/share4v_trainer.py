@@ -24,14 +24,6 @@ def maybe_zero_3(param, ignore_status=False, name=None):
     return param
 
 
-def get_mm_adapter_state_maybe_zero_3(named_params, keys_to_match):
-    to_return = {k: t for k, t in named_params if any(
-        key_match in k for key_match in keys_to_match)}
-    to_return = {k: maybe_zero_3(v, ignore_status=True, name=k).cpu()
-                 for k, v in to_return.items()}
-    return to_return
-
-
 def split_to_even_chunks(indices, lengths, num_chunks):
     """
     Split a list of indices into `chunks` chunks of roughly equal lengths.
@@ -54,42 +46,8 @@ def split_to_even_chunks(indices, lengths, num_chunks):
     return chunks
 
 
-def get_modality_length_grouped_indices(lengths, batch_size, world_size, generator=None):
-    # We need to use torch for the random part as a distributed sampler will set the random seed for torch.
-    assert all(l != 0 for l in lengths), "Should not have zero length."
-    if all(l > 0 for l in lengths) or all(l < 0 for l in lengths):
-        # all samples are in the same modality
-        return get_length_grouped_indices(lengths, batch_size, world_size, generator=generator)
-    mm_indices, mm_lengths = zip(*[(i, l)
-                                 for i, l in enumerate(lengths) if l > 0])
-    lang_indices, lang_lengths = zip(
-        *[(i, -l) for i, l in enumerate(lengths) if l < 0])
-
-    mm_shuffle = [mm_indices[i] for i in get_length_grouped_indices(
-        mm_lengths, batch_size, world_size, generator=None)]
-    lang_shuffle = [lang_indices[i] for i in get_length_grouped_indices(
-        lang_lengths, batch_size, world_size, generator=None)]
-    megabatch_size = world_size * batch_size
-    mm_megabatches = [mm_shuffle[i: i + megabatch_size]
-                      for i in range(0, len(mm_shuffle), megabatch_size)]
-    lang_megabatches = [lang_shuffle[i: i + megabatch_size]
-                        for i in range(0, len(lang_shuffle), megabatch_size)]
-
-    last_mm = mm_megabatches[-1]
-    last_lang = lang_megabatches[-1]
-    additional_batch = last_mm + last_lang
-    megabatches = mm_megabatches[:-1] + lang_megabatches[:-1]
-    megabatch_indices = torch.randperm(len(megabatches), generator=generator)
-    megabatches = [megabatches[i] for i in megabatch_indices]
-
-    if len(additional_batch) > 0:
-        megabatches.append(sorted(additional_batch))
-
-    return [i for megabatch in megabatches for i in megabatch]
-
-
 def get_length_grouped_indices(lengths, batch_size, world_size, generator=None, merge=True):
-    # We need to use torch for the random part as a distributed sampler will set the random seed for torch.
+    
     indices = torch.randperm(len(lengths), generator=generator)
     megabatch_size = world_size * batch_size
     megabatches = [indices[i: i + megabatch_size].tolist()
@@ -307,7 +265,7 @@ class Share4VTrainer(Trainer):
             run_dir = self._get_output_dir(trial=trial)
             output_dir = os.path.join(run_dir, checkpoint_folder)
 
-            # Only save Adapter
+            
             keys_to_match = ['mm_projector', 'vision_resampler']
             if getattr(self.args, "use_im_start_end", False):
                 keys_to_match.extend(['embed_tokens', 'embed_in'])

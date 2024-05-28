@@ -45,7 +45,7 @@ def forward(
         self.v_proj(hidden_states)
         .view(bsz, q_len, self.num_key_value_heads, self.head_dim)
         .transpose(1, 2)
-    )  # shape: (b, num_heads, s, head_dim)
+    )  
 
     kv_seq_len = key_states.shape[-2]
     if past_key_value is not None:
@@ -57,19 +57,19 @@ def forward(
     )
 
     if past_key_value is not None:
-        # reuse k, v
+        
         key_states = torch.cat([past_key_value[0], key_states], dim=2)
         value_states = torch.cat([past_key_value[1], value_states], dim=2)
 
     past_key_value = (key_states, value_states) if use_cache else None
 
-    # repeat k/v heads if n_kv_heads < n_heads
+    
     key_states = repeat_kv(key_states, self.num_key_value_groups)
     value_states = repeat_kv(value_states, self.num_key_value_groups)
 
-    # Transform the data into the format required by flash attention
+    
     qkv = torch.stack([query_states, key_states, value_states], dim=2)
-    qkv = qkv.transpose(1, 3)  # shape: [b, s, 3, num_heads, head_dim]
+    qkv = qkv.transpose(1, 3)  
     key_padding_mask = attention_mask
 
     if key_padding_mask is None:
@@ -95,12 +95,12 @@ def forward(
     return self.o_proj(output), None, past_key_value
 
 
-# Disable the transformation of the attention mask in LlamaModel as the flash attention
-# requires the attention mask to be the same as the key_padding_mask
+
+
 def _prepare_decoder_attention_mask(
     self, attention_mask, input_shape, inputs_embeds, past_key_values_length
 ):
-    # [bsz, seq_len]
+    
     return attention_mask
 
 
@@ -109,7 +109,7 @@ def replace_llama_attn_with_flash_attn():
     if cuda_major < 8:
         warnings.warn(
             "Flash attention is only supported on A100 or H100 GPU during training due to head dim > 64 backward."
-            "ref: https://github.com/HazyResearch/flash-attention/issues/190#issuecomment-1523359593"
+            "ref: https://github.com/HazyResearch/flash-attention/issues/190"
         )
     transformers.models.llama.modeling_llama.LlamaModel._prepare_decoder_attention_mask = (
         _prepare_decoder_attention_mask
