@@ -5,9 +5,9 @@ import torch
 from transformers import (AutoConfig, AutoModelForCausalLM, AutoTokenizer,
                           BitsAndBytesConfig)
 
-from share4v.constants import (DEFAULT_IM_END_TOKEN, DEFAULT_IM_START_TOKEN,
-                               DEFAULT_IMAGE_PATCH_TOKEN)
-from share4v.model import Share4VLlamaForCausalLM
+from vision.constants import (DEFAULT_IM_END_TOKEN, DEFAULT_IM_START_TOKEN,
+                              DEFAULT_IMAGE_PATCH_TOKEN)
+from vision.model import visionLlamaForCausalLM
 
 
 def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, load_4bit=False, device_map="auto", device="cuda"):
@@ -29,16 +29,17 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
     else:
         kwargs['torch_dtype'] = torch.float16
 
-    if 'sharegpt4v' in model_name.lower():
-        # Load ShareGPT4V model
+    if 'vision' in model_name.lower():
+        # Load Vision model
         if 'lora' in model_name.lower() and model_base is None:
-            warnings.warn('There is `lora` in model name but no `model_base` is provided. If you are loading a LoRA model, please provide the `model_base` argument.')
+            warnings.warn(
+                'There is `lora` in model name but no `model_base` is provided. If you are loading a LoRA model, please provide the `model_base` argument.')
         if 'lora' in model_name.lower() and model_base is not None:
             lora_cfg_pretrained = AutoConfig.from_pretrained(model_path)
             tokenizer = AutoTokenizer.from_pretrained(
                 model_base, use_fast=False)
-            print('Loading ShareGPT4V from base model...')
-            model = Share4VLlamaForCausalLM.from_pretrained(
+            print('Loading Vision from base model...')
+            model = visionLlamaForCausalLM.from_pretrained(
                 model_base, low_cpu_mem_usage=True, config=lora_cfg_pretrained, **kwargs)
             token_num, tokem_dim = model.lm_head.out_features, model.lm_head.in_features
             if model.lm_head.weight.shape[0] != token_num:
@@ -47,7 +48,7 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
                 model.model.embed_tokens.weight = torch.nn.Parameter(torch.empty(
                     token_num, tokem_dim, device=model.device, dtype=model.dtype))
 
-            print('Loading additional ShareGPT4V weights...')
+            print('Loading additional Vision weights...')
             if os.path.exists(os.path.join(model_path, 'non_lora_trainables.bin')):
                 non_lora_trainables = torch.load(os.path.join(
                     model_path, 'non_lora_trainables.bin'), map_location='cpu')
@@ -78,11 +79,11 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
             print('Model is loaded...')
         elif model_base is not None:
             # this may be mm projector only
-            print('Loading ShareGPT4V from base model...')
+            print('Loading Vision from base model...')
             tokenizer = AutoTokenizer.from_pretrained(
                 model_base, use_fast=False)
             cfg_pretrained = AutoConfig.from_pretrained(model_path)
-            model = Share4VLlamaForCausalLM.from_pretrained(
+            model = visionLlamaForCausalLM.from_pretrained(
                 model_base, low_cpu_mem_usage=True, config=cfg_pretrained, **kwargs)
 
             mm_projector_weights = torch.load(os.path.join(
@@ -93,7 +94,7 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
         else:
             tokenizer = AutoTokenizer.from_pretrained(
                 model_path, use_fast=False)
-            model = Share4VLlamaForCausalLM.from_pretrained(
+            model = visionLlamaForCausalLM.from_pretrained(
                 model_path, low_cpu_mem_usage=True, **kwargs)
     else:
         # Load language model
@@ -118,7 +119,7 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
 
     image_processor = None
 
-    if 'sharegpt4v' in model_name.lower():
+    if 'vision' in model_name.lower():
         mm_use_im_start_end = getattr(
             model.config, "mm_use_im_start_end", False)
         mm_use_im_patch_token = getattr(

@@ -5,7 +5,7 @@ import torch
 from PIL import Image
 from transformers import StoppingCriteria
 
-from share4v.constants import IMAGE_TOKEN_INDEX
+from vision.constants import IMAGE_TOKEN_INDEX
 
 
 def load_image_from_base64(image):
@@ -91,7 +91,7 @@ class KeywordsStoppingCriteria(StoppingCriteria):
         self.start_len = input_ids.shape[1]
 
     def __call__(self, output_ids: torch.LongTensor, scores: torch.FloatTensor, **kwargs) -> bool:
-        
+
         assert output_ids.shape[0] == 1, "Only support batch size 1 (yet)"
         offset = min(output_ids.shape[1] -
                      self.start_len, self.max_keyword_len)

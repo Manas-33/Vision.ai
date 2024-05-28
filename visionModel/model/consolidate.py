@@ -1,14 +1,14 @@
 """
 Usage:
-python3 -m share4v.model.consolidate --src ~/model_weights/share4v-7b --dst ~/model_weights/share4v-7b_consolidate
+python3 -m vision.model.consolidate --src ~/model_weights/vision-7b --dst ~/model_weights/vision-7b_consolidate
 """
 import argparse
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from share4v.model import *
-from share4v.model.utils import auto_upgrade
+from vision.model import *
+from vision.model.utils import auto_upgrade
 
 
 def consolidate_ckpt(src_path, dst_path):

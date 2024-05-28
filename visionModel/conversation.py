@@ -230,7 +230,7 @@ If a question does not make any sense, or is not factually coherent, explain why
     sep2="</s>",
 )
 
-conv_share4v_llama_2 = Conversation(
+conv_vision_llama_2 = Conversation(
     system="You are a helpful language and vision assistant. "
            "You are able to understand the visual content that the user provides, "
            "and assist the user with a variety of tasks using natural language.",
@@ -243,7 +243,7 @@ conv_share4v_llama_2 = Conversation(
     sep2="</s>",
 )
 
-conv_share4v_plain = Conversation(
+conv_vision_plain = Conversation(
     system="",
     roles=("", ""),
     messages=(

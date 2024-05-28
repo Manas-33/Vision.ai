@@ -47,7 +47,7 @@ def split_to_even_chunks(indices, lengths, num_chunks):
 
 
 def get_length_grouped_indices(lengths, batch_size, world_size, generator=None, merge=True):
-    
+
     indices = torch.randperm(len(lengths), generator=generator)
     megabatch_size = world_size * batch_size
     megabatches = [indices[i: i + megabatch_size].tolist()
@@ -96,7 +96,7 @@ class LengthGroupedSampler(Sampler):
         return iter(indices)
 
 
-class Share4VTrainer(Trainer):
+class visionTrainer(Trainer):
 
     def _get_train_sampler(self) -> Optional[torch.utils.data.Sampler]:
         if self.train_dataset is None or not has_length(self.train_dataset):
@@ -265,7 +265,6 @@ class Share4VTrainer(Trainer):
             run_dir = self._get_output_dir(trial=trial)
             output_dir = os.path.join(run_dir, checkpoint_folder)
 
-            
             keys_to_match = ['mm_projector', 'vision_resampler']
             if getattr(self.args, "use_im_start_end", False):
                 keys_to_match.extend(['embed_tokens', 'embed_in'])
@@ -278,10 +277,10 @@ class Share4VTrainer(Trainer):
                 torch.save(weight_to_save, os.path.join(
                     output_dir, 'mm_projector.bin'))
         else:
-            super(Share4VTrainer, self)._save_checkpoint(model, trial, metrics)
+            super(visionTrainer, self)._save_checkpoint(model, trial, metrics)
 
     def _save(self, output_dir: Optional[str] = None, state_dict=None):
         if getattr(self.args, 'tune_mm_mlp_adapter', False):
             pass
         else:
-            super(Share4VTrainer, self)._save(output_dir, state_dict)
+            super(visionTrainer, self)._save(output_dir, state_dict)

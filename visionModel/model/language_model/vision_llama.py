@@ -7,31 +7,30 @@ from transformers import (AutoConfig, AutoModelForCausalLM, LlamaConfig,
                           LlamaForCausalLM, LlamaModel)
 from transformers.modeling_outputs import CausalLMOutputWithPast
 
-from ..share4v_arch import Share4VMetaForCausalLM, Share4VMetaModel
+from ..vision_arch import VisionMetaForCausalLM, VisionMetaModel
 
 
-class Share4VConfig(LlamaConfig):
-    model_type = "share4v"
+class VisionConfig(LlamaConfig):
+    model_type = "vision"
 
 
-class Share4VLlamaModel(Share4VMetaModel, LlamaModel):
-    config_class = Share4VConfig
+class VisionLlamaModel(VisionMetaModel, LlamaModel):
+    config_class = VisionConfig
 
     def __init__(self, config: LlamaConfig):
-        super(Share4VLlamaModel, self).__init__(config)
+        super(VisionLlamaModel, self).__init__(config)
 
 
-class Share4VLlamaForCausalLM(LlamaForCausalLM, Share4VMetaForCausalLM):
-    config_class = Share4VConfig
+class VisionLlamaForCausalLM(LlamaForCausalLM, VisionMetaForCausalLM):
+    config_class = VisionConfig
 
     def __init__(self, config):
         super(LlamaForCausalLM, self).__init__(config)
-        self.model = Share4VLlamaModel(config)
+        self.model = VisionLlamaModel(config)
 
         self.lm_head = nn.Linear(
             config.hidden_size, config.vocab_size, bias=False)
 
-        # Initialize weights and apply final processing
         self.post_init()
 
     def get_model(self):
@@ -59,7 +58,6 @@ class Share4VLlamaForCausalLM(LlamaForCausalLM, Share4VMetaForCausalLM):
         input_ids, attention_mask, past_key_values, inputs_embeds, labels = self.prepare_inputs_labels_for_multimodal(
             input_ids, attention_mask, past_key_values, labels, images)
 
-        # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn)
         outputs = self.model(
             input_ids=input_ids,
             attention_mask=attention_mask,
@@ -76,14 +74,14 @@ class Share4VLlamaForCausalLM(LlamaForCausalLM, Share4VMetaForCausalLM):
 
         loss = None
         if labels is not None:
-            # Shift so that tokens < n predict n
+
             shift_logits = logits[..., :-1, :].contiguous()
             shift_labels = labels[..., 1:].contiguous()
-            # Flatten the tokens
+
             loss_fct = CrossEntropyLoss()
             shift_logits = shift_logits.view(-1, self.config.vocab_size)
             shift_labels = shift_labels.view(-1)
-            # Enable model/pipeline parallelism
+
             shift_labels = shift_labels.to(shift_logits.device)
             loss = loss_fct(shift_logits, shift_labels)
 
@@ -105,7 +103,6 @@ class Share4VLlamaForCausalLM(LlamaForCausalLM, Share4VMetaForCausalLM):
         if past_key_values:
             input_ids = input_ids[:, -1:]
 
-        # if `inputs_embeds` are passed, we only want to use them in the 1st generation step
         if inputs_embeds is not None and past_key_values is None:
             model_inputs = {"inputs_embeds": inputs_embeds}
         else:
@@ -122,5 +119,5 @@ class Share4VLlamaForCausalLM(LlamaForCausalLM, Share4VMetaForCausalLM):
         return model_inputs
 
 
-AutoConfig.register("share4v", Share4VConfig)
-AutoModelForCausalLM.register(Share4VConfig, Share4VLlamaForCausalLM)
+AutoConfig.register("vision", VisionConfig)
+AutoModelForCausalLM.register(VisionConfig, VisionLlamaForCausalLM)

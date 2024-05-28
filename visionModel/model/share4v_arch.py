@@ -2,18 +2,18 @@ from abc import ABC, abstractmethod
 
 import torch
 
-from share4v.constants import (DEFAULT_IM_END_TOKEN, DEFAULT_IM_START_TOKEN,
-                               DEFAULT_IMAGE_PATCH_TOKEN, IGNORE_INDEX,
-                               IMAGE_TOKEN_INDEX)
+from vision.constants import (DEFAULT_IM_END_TOKEN, DEFAULT_IM_START_TOKEN,
+                              DEFAULT_IMAGE_PATCH_TOKEN, IGNORE_INDEX,
+                              IMAGE_TOKEN_INDEX)
 
 from .multimodal_encoder.builder import build_vision_tower
 from .multimodal_projector.builder import build_vision_projector
 
 
-class Share4VMetaModel:
+class visionMetaModel:
 
     def __init__(self, config):
-        super(Share4VMetaModel, self).__init__(config)
+        super(visionMetaModel, self).__init__(config)
 
         if hasattr(config, "mm_vision_tower"):
             self.vision_tower = build_vision_tower(config, delay_load=True)
@@ -80,7 +80,7 @@ class Share4VMetaModel:
                 get_w(mm_projector_weights, 'mm_projector'))
 
 
-class Share4VMetaForCausalLM(ABC):
+class visionMetaForCausalLM(ABC):
 
     @abstractmethod
     def get_model(self):

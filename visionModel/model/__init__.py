@@ -1,4 +1,4 @@
-from .language_model.share4v_llama import (Share4VConfig,
-                                           Share4VLlamaForCausalLM)
+from .language_model.vision_llama import (visionConfig,
+                                          visionLlamaForCausalLM)
 from .multimodal_encoder.configuration_evaclip import EvaCLIPVisionConfig
 from .multimodal_encoder.modeling_evaclip import EvaCLIPVisionModel
